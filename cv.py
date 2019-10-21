@@ -2,16 +2,22 @@ import cv2
 import numpy
 from mss import mss
 from PIL import Image
-from MouseController import MouseController
+from pynput.mouse import Button, Controller
 from pynput import keyboard
 import time
 
 #images = "C:\\Users\\eiver\\Documents\\Bots\\CVLeagueBot\\Images\\"
 #playGame = images + "Playgame.jpg"
-playgame = cv2.imread("Images/PlayGame.jpg", 0)
-print(playgame)
+menuSequence = [
+    cv2.imread("Images/PlayGame.jpg", 0),
+    cv2.imread("Images/coopvsaibutton.png", 0),
+    cv2.imread("Images/beginnerop.png", 0),
+    cv2.imread("Images/confirm.png", 0),
+    cv2.imread("Images/findmatch.png", 0),
+    cv2.imread("Images/accept.png", 0)
+]
 
-mc = MouseController()
+mc = Controller()
 monitor = {'top': 0, 'left': 0, 'width': 1920, 'height': 1080}
 screen = mss()
 sct = 0
@@ -30,13 +36,14 @@ def matchTemplate (img_g, temp, threshhold = .5):
     matches = numpy.where(r >= threshhold)
     return matches #returns matching array
 
-def clickButton():
-    matches = matchTemplate(screenCap(), playgame, .9)
+def clickButton(template):
+    matches = matchTemplate(screenCap(), template, .9)
     if numpy.shape(matches)[1] < 1:
         return
     x = matches[1][0] + 75
     y = matches[0][0] + 20
-    mc.mouse.position = (x, y)
+    mc.position = (x, y)
+    return True
     time.sleep(.5)
 
 #So i can exit without mouse control
@@ -49,18 +56,13 @@ def on_press(key):
 listener = keyboard.Listener(on_press = on_press)
 listener.start()
 
-#temp
-def cap():
-    matches = matchTemplate(screenCap(), playgame, .9)
-    if numpy.shape(matches)[1] < 1:
-        return
-    x = matches[1][0]# + 75
-    y = matches[0][0]
-    sct2 = cv2.imread(screen.shot())
-    #cv2.rectangle(sct2,(x,y), (140,40), (255,0,0), 2)
-    cv2.imshow("test", sct2)
-
-#cap()
+step = 0
 while(not esc):
-    clickButton()
-    time.sleep(1)
+    if step >= len(menuSequence):
+        break
+
+    if clickButton(menuSequence[step]):
+        step += 1
+        mc.press(Button.left)
+        mc.release(Button.left)
+    time.sleep(0.05)
